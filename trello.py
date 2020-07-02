@@ -34,15 +34,34 @@ def create(name, column_name=""):
 	      
     # Проверяем, что передан второй парамметр. Если да, то первый - название задачи, которую нужно создать, а второй - название колонки, в которой должна быть создана задача. Если парамметр один, то это название колонки, которую нужно создать.
     if column_name != "":
+    	# Собираем список задач с таким (name) наименованием.
+      task_list = []    
+      for column in column_data:
+          column_tasks = requests.get(base_url.format('lists') + '/' + column['id'] + '/cards', params=auth_params).json()    
+          for task in column_tasks:    
+              if task['name'] == name:
+                  task_dic = {'id': task['id'], 'name': task['name'], 'name_column': column['name']}
+                  task_list.append(task_dic)
+      # Если список получился не пустой, выводим его пользователю    
+      if len(task_list) > 0:
+        print("Задача с таким наименованием уже существует (всего задач " + str(len(task_list)) + "):")
+        for i in range(len(task_list)):
+        	print(str(i+1) + ". " + task_list[i]['id'] + ", в колонке - " + task_list[i]['name_column']) 
+        # Запрашиваем решение о создании еще одной задачи с таким именем
+        choice = input("Все-равно создать? (y/N):  ")
+        # Если ответ не положительный - заканчиваем выполнение
+        if choice.upper() != "Y":
+        	print("Задача не создана!!!")
+        	return
+	    
 	    # Переберём данные обо всех колонках, пока не найдём ту колонку, которая нам нужна      
-	    for column in column_data:      
-	        if column['name'] == column_name:      
-	            # Создадим задачу с именем _name_ в найденной колонке      
-	            requests.post(base_url.format('cards'), data={'name': name, 'idList': column['id'], **auth_params})
-	            break
+      for column in column_data:      
+          if column['name'] == column_name:      
+              # Создадим задачу с именем _name_ в найденной колонке      
+              requests.post(base_url.format('cards'), data={'name': name, 'idList': column['id'], **auth_params})
+              break
     else:
       idBoard = column_data[0]['idBoard']
-    	#print(idBoard)
       requests.post(base_url.format('lists'), data={'name': name, 'idBoard': idBoard, **auth_params})
 
 def move(name, column_name):
